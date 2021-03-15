@@ -1,18 +1,19 @@
-<<<<<<< HEAD
-# Welcome to your CDK TypeScript project!
+# AWS Database Migration Service Inter-region Demo Environment Setup
 
-This is a blank project for TypeScript development with CDK.
+This CDK provides set up for demo of inter-region RDS migration by using AWS 
+Database Migration Service.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## Architecture
 
-## Useful commands
 
- * `npm run build`   compile typescript to js
- * `npm run watch`   watch for changes and compile
- * `npm run test`    perform the jest unit tests
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
-=======
-# dms-migration-setup
->>>>>>> 758aa84a6d74169d41b74380c12b954891fcb0c3
+## Running
+
+To run the CDK script first set environment variable `CDK_DEFAULT_ACCOUNT` with 
+your account ID, or you can set the value of variable `accountId` in
+`bin/dms-migration.ts` source.
+
+To execute the script, run.
+
+```
+cdk deploy --all
+```
