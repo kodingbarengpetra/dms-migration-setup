@@ -116,7 +116,7 @@ echo "export DATABASE_PASSWORD=\"$DATABASE_PASSWORD\"" >> $SCRIPT_NAME
 echo "export DATABASE_USERNAME=\"$DATABASE_USERNAME\"" >> $SCRIPT_NAME
 
 # Initialize database
-#mysql -u $DATABASE_USERNAME -h $DATABASE_HOST -p$DATABASE_PASSWORD < /home/ec2-user/database.sql
+#mysql -u $DATABASE_USERNAME -h $DATABASE_HOST -p$DATABASE_PASSWORD < /home/ec2-user/schema.sql
     `;
     
     this.bastion.instance.addUserData(userData);
