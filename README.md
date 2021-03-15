@@ -5,6 +5,11 @@ Database Migration Service.
 
 ## Architecture
 
+**Initial architecture** The initial architecture consists of 2 stack in 2 different region.
+Each stack has 1 RDS and 1 Bastion host. The bastion host can be accessed through EC2 Instance Connect.
+
+![Initial Architecture](docs/images/initial-architecture.png)
+
 
 ## Running
 
