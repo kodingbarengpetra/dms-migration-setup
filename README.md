@@ -22,3 +22,14 @@ To execute the script, run.
 ```
 cdk deploy --all
 ```
+
+## Cleaning Up
+
+Before cleaning up the resource created by this CDK code, you need to clean up
+the resource you already created manually, e.g. VPC peering, DMS, etc.
+
+After that you can execute the command below.
+
+```
+cdk destroy --all
+```
