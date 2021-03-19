@@ -12,11 +12,13 @@ new DmsMigrationStack(app, 'DmsMigrationApSoutheast1Stack',{
         region: 'ap-southeast-1',
     },
     cidr: '10.0.0.0/16',
+    populate: false,
 });
 new DmsMigrationStack(app, 'DmsMigrationApSoutheast2Stack',{
     env: {
         account: accountId,
         region: 'ap-southeast-2',
     },
-    cidr: '10.1.0.0/16'
+    cidr: '10.1.0.0/16',
+    populate: true,
 });

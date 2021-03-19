@@ -5,7 +5,8 @@ import * as assets from '@aws-cdk/aws-s3-assets';
 import * as path from 'path';
 
 export interface DmsMigrationStackProps extends cdk.StackProps {
-  cidr: string
+  cidr: string,
+  populate: boolean,
 }
 
 export class DmsMigrationStack extends cdk.Stack {
@@ -29,7 +30,12 @@ export class DmsMigrationStack extends cdk.Stack {
   }
   
   private createVpc() {
-    this.vpc = new ec2.Vpc(this, 'Vpc', { cidr: this.props.cidr });
+    this.vpc = new ec2.Vpc(this, 'Vpc', {
+      cidr: this.props.cidr,
+      //simplify by not using all AZ and not using NAT gateway
+      maxAzs: 2,
+      natGateways: 0,
+    });
     new cdk.CfnOutput(this, 'VPC ID', { value: this.vpc.vpcId });
   }
   
@@ -58,9 +64,10 @@ export class DmsMigrationStack extends cdk.Stack {
     this.database = new rds.DatabaseInstance(this, 'DatabaseInstance', {
       engine: rds.DatabaseInstanceEngine.mysql({ version: rds.MysqlEngineVersion.VER_8_0_11 }),
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+      allocatedStorage: 8, //8GB
       vpc: this.vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE
+        subnetType: ec2.SubnetType.ISOLATED
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY, //don't save snapshot since this is demo
     });
@@ -82,43 +89,21 @@ export class DmsMigrationStack extends cdk.Stack {
     const secretId = this.database.secret!.secretName;
     const s3Object = this.asset.s3ObjectUrl;
     const region = cdk.Stack.of(this).region;
-    const userData = `
+    const populate = this.props.populate ? "TRUE": "";
+    
+    let userData = `
 #!/bin/bash
 # Variables
 DMS_DATA=${s3Object}
-REGION=${region}
-DATABASE_SECRET_NAME=${secretId}
-
-# Install requirements
-wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
-chmod +x ./jq
-cp jq /usr/bin
-yum update -y
-yum install -y python3 mysql
-pip3 install mysql-connector-python
 
 # Install script
 aws s3 cp $DMS_DATA /home/ec2-user/scripts.zip
 unzip -o /home/ec2-user/scripts.zip -d /home/ec2-user/
 
-# Get secret values
-SECRET_VALUE=$(aws secretsmanager get-secret-value --region $REGION --secret-id $DATABASE_SECRET_NAME | jq -r .SecretString)
-DATABASE_HOST=$(echo $SECRET_VALUE | jq -r .host)
-DATABASE_PASSWORD=$(echo $SECRET_VALUE | jq -r .password)
-DATABASE_USERNAME=$(echo $SECRET_VALUE | jq -r .username)
+DMS_DATA=$DMS_DATA REGION=${region} POPULATE=${populate} DATABASE_SECRET_NAME=${secretId} \
+  sh /home/ec2-user/init.sh >> /var/log/dms-migration-stack.log 2>&1
+`;
 
-# Set up environment variables
-SCRIPT_NAME=/etc/profile.d/init.sh
-echo "export DMS_DATA=\"$DMS_DATA\"" >> $SCRIPT_NAME
-echo "export DATABASE_SECRET_NAME=\"$DATABASE_SECRET_NAME\"" >> $SCRIPT_NAME
-echo "export DATABASE_HOST=\"$DATABASE_HOST\"" >> $SCRIPT_NAME
-echo "export DATABASE_PASSWORD=\"$DATABASE_PASSWORD\"" >> $SCRIPT_NAME
-echo "export DATABASE_USERNAME=\"$DATABASE_USERNAME\"" >> $SCRIPT_NAME
-
-# Initialize database
-#mysql -u $DATABASE_USERNAME -h $DATABASE_HOST -p$DATABASE_PASSWORD < /home/ec2-user/schema.sql
-    `;
-    
     this.bastion.instance.addUserData(userData);
   }
 }
